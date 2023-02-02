@@ -1,14 +1,14 @@
 {
-  "name": "@0xislamtaha/orchestrator",
+  "name": "@bowery-valuation/orchestrator",
   "version": "2.2.0",
-  "description": "Execute cypress specs in parallel across multiple docker containers",
+  "description": "Execute cypress specs in parallel across multiple docker containers. Forked from https://github.com/0xIslamTaha/orchestrator",
   "main": "src/orchestrator.js",
   "scripts": {
     "test": "echo \"No test specified\""
   },
   "bin": {
     "orchestrator": "bin/orchestrator",
-    "@0xIslamTaha/orchestrator": "bin/orchestrator"
+    "@bowery-valuation/orchestrator": "bin/orchestrator"
   },
   "publishConfig": {
     "access": "public"
@@ -34,7 +34,7 @@
     "parallel",
     "cypress parallel"
   ],
-  "homepage": "https://github.com/0xIslamTaha/orchestrator",
+  "homepage": "https://github.com/Bowery-RES/orchestrator",
   "author": {
     "name": "Islam Taha",
     "email": "islamtaha2012@gmail.com",
