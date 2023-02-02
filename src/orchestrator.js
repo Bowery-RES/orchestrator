@@ -1,34 +1,30 @@
 //@ts-check
 import sh from "shelljs";
 import marge from "mochawesome-report-generator";
-import { merge } from "mochawesome-merge";
+import {merge} from "mochawesome-merge";
 import fs from "fs";
 import arg from "arg";
 import path from "path";
-import { analyseReport } from "./analyseReport";
-import {
-  checkFileIsExisting,
-  parseJsonFile,
-  orderBasedOnBrowserDuration,
-} from "./helper.js";
+import {analyseReport} from "./analyseReport";
+import {checkFileIsExisting, orderBasedOnBrowserDuration, parseJsonFile,} from "./helper.js";
 import * as lg from "./logger";
-import { checkRequirements } from "./checker";
+import {checkRequirements} from "./checker";
 
 const executionTimeReportDir = "executionTimeReport";
 const executionTimeReportDirPath = path.resolve(
   process.cwd(),
   executionTimeReportDir
 );
-const executiontimeReportJson = "specsExecutionTime.json";
-const executiontimeReportJsonPath = path.join(
+const executionTimeReportJson = "specsExecutionTime.json";
+const executionTimeReportJsonPath = path.join(
   executionTimeReportDirPath,
-  executiontimeReportJson
+  executionTimeReportJson
 );
 
 function execa(command, flag = true) {
   return new Promise((resolve, reject) =>
     sh.exec(command, function (code, stdout, stderr) {
-      if (code != 0) {
+      if (code !== 0) {
         if (
           flag &&
           stdout
@@ -36,11 +32,11 @@ function execa(command, flag = true) {
             .toLowerCase()
             .includes("cypress failed to make a connection to firefox")
         ) {
-          let oldContName = command.split("--name ")[1].split(" ")[0];
-          let newContName = `${oldContName}_${Math.floor(
+          const oldContName = command.split("--name ")[1].split(" ")[0];
+          const newContName = `${oldContName}_${Math.floor(
             Math.random() * 100000
           )}`;
-          let cmd = command.replace(oldContName, newContName);
+          const cmd = command.replace(oldContName, newContName);
           setTimeout(() => execa(cmd, false), 1000);
         } else {
           return reject(code);
@@ -63,9 +59,9 @@ function parseArgumentsIntoConfig(rawArgs) {
       permissive: true,
     }
   );
-  let result = {};
+  const result = {};
   for (let i = 0; i < args["_"].length; i += 2) {
-    let key = args["_"][i].replace("--", "");
+    const key = args["_"][i].replace("--", "");
     let variable = args["_"][i + 1];
     if (variable.includes("{")) {
       variable = JSON.parse(variable);
@@ -74,7 +70,7 @@ function parseArgumentsIntoConfig(rawArgs) {
         .replace("[", "")
         .replace("]", "")
         .replace(", ", ",")
-        .replace(/"|'/g, "")
+        .replace(/["']/g, "")
         .split(",");
     }
     result[key] = variable;
@@ -85,15 +81,32 @@ function parseArgumentsIntoConfig(rawArgs) {
 function overWriteConfig(args) {
   lg.step("Overwrite the config file with the arguments if there is any", true);
   const configFile = args["--config"] || path.resolve(__dirname, "orchestrator.json");
-  const defaultConfig = JSON.parse(fs.readFileSync(configFile, "utf-8"));
-  const config = { ...defaultConfig, ...args };
-  return config;
+  const defaultConfig = JSON.parse(fs.readFileSync(configFile, {encoding:'utf8', flag:'r'}));
+  return {
+    "parallelizm": 1,
+    "timeout": "",
+    "browsers": [],
+    "environment": {},
+    "preCommands": [],
+    "dockerComposeOptions": {},
+    "dockerComposePath": "",
+    "specsHomePath": "",
+    "specsDockerPath": "",
+    "cypressContainerName": "",
+    "mochawesomeJSONPath": "",
+    "reportPath": "",
+    "specs": [],
+    "analyseReport": false,
+    "specsExecutionTimePath": "",
+    ...defaultConfig,
+    ...args
+  };
 }
 
 function setEnvVars(config) {
   lg.step("Export the environment variables");
   Object.keys(config.environment).forEach((key) => {
-    let value = config.environment[key];
+    const value = config.environment[key];
     sh.env[key] = value;
     lg.subStep(`${key}=${value}`);
   });
@@ -126,16 +139,15 @@ function getListOfSpecs(config, browser) {
       .filter((val) => val.match(/.*ts|js/));
   }
 
-  if (checkFileIsExisting(executiontimeReportJsonPath)) {
-    let specsExecutionTime = parseJsonFile(executiontimeReportJsonPath);
-    let browserSpecs = orderBasedOnBrowserDuration(
+  if (checkFileIsExisting(executionTimeReportJsonPath)) {
+    const specsExecutionTime = parseJsonFile(executionTimeReportJsonPath);
+    const browserSpecs = orderBasedOnBrowserDuration(
       specsExecutionTime,
       browser
     ).map((item) => item.specName);
 
-    let specs = browserSpecs.filter((spec) => existingSpecs.includes(spec));
-    specs = [
-      ...specs,
+    const specs = [
+      ...browserSpecs.filter((spec) => existingSpecs.includes(spec)),
       ...existingSpecs.filter((item) => !specs.includes(item)),
     ];
 
@@ -146,7 +158,7 @@ function getListOfSpecs(config, browser) {
 }
 
 function removeEmpty(arrays) {
-  let results = [];
+  const results = [];
   arrays.forEach((array) => {
     if (array.length > 0) results.push(array.filter((item) => item !== ""));
   });
@@ -154,8 +166,8 @@ function removeEmpty(arrays) {
 }
 
 function splitSpecsOverMachines(specs, config) {
-  let noOfMachines = config.parallelizm * config.browsers.length;
-  let specsForMachines = [];
+  const noOfMachines = config.parallelizm * config.browsers.length;
+  const specsForMachines = [];
 
   for (let i = 0; i < noOfMachines; i++) {
     specsForMachines.push([]); // [ [], [], [] ..]
@@ -164,7 +176,7 @@ function splitSpecsOverMachines(specs, config) {
   let _cycles = 0;
   while (specs.length > 0) {
     for (let i = 0; i < noOfMachines; i++) {
-      if (specs.length == 0) break;
+      if (specs.length === 0) break;
       _cycles % 2
         ? specsForMachines[i].push(specs.pop())
         : specsForMachines[i].push(specs.shift());
@@ -175,16 +187,16 @@ function splitSpecsOverMachines(specs, config) {
   return removeEmpty(specsForMachines);
 }
 
-function genearateSpecsCommandsForMachines(config, browser) {
-  let specsCommandsOverMachines = [];
+function generateSpecsCommandsForMachines(config, browser) {
+  const specsCommandsOverMachines = [];
 
-  let specs = getListOfSpecs(config, browser);
-  let listOfSpecsOverMachines = splitSpecsOverMachines(specs, config);
+  const specs = getListOfSpecs(config, browser);
+  const listOfSpecsOverMachines = splitSpecsOverMachines(specs, config);
 
-  listOfSpecsOverMachines.forEach((listOfspecsPerMachine) => {
+  listOfSpecsOverMachines.forEach((listOfSpecsPerMachine) => {
     let result = "";
-    listOfspecsPerMachine.forEach((spec) => {
-      let specPath = path.join(config.specsDockerPath, spec);
+    listOfSpecsPerMachine.forEach((spec) => {
+      const specPath = path.join(config.specsDockerPath, spec);
       result = `${result},${specPath.replace(/\\/g, "/")}`;
     });
     specsCommandsOverMachines.push(result.slice(1));
@@ -193,30 +205,30 @@ function genearateSpecsCommandsForMachines(config, browser) {
   return specsCommandsOverMachines;
 }
 
-function generateSpecsCommandsOverMachinesOrederedByBrowsers(config) {
-  let specsCommandsOverMachinesOrederedByBrowsers = {}; // {'chrome': [ [] , [] , []], 'firefox': [[], [], []]}
+function generateSpecsCommandsOverMachinesOrderedByBrowsers(config) {
+  const specsCommandsOverMachinesOrderedByBrowsers = {}; // {'chrome': [ [] , [] , []], 'firefox': [[], [], []]}
 
   config.browsers.forEach((browser) => {
-    specsCommandsOverMachinesOrederedByBrowsers[browser] =
-      genearateSpecsCommandsForMachines(config, browser);
+    specsCommandsOverMachinesOrderedByBrowsers[browser] =
+      generateSpecsCommandsForMachines(config, browser);
   });
 
-  return specsCommandsOverMachinesOrederedByBrowsers;
+  return specsCommandsOverMachinesOrderedByBrowsers;
 }
 
 function _constructCypressCommands(config) {
-  let bashCommands = [];
-  let specsCommandsOverMachinesOrederedByBrowsers =
-    generateSpecsCommandsOverMachinesOrederedByBrowsers(config);
-  let _noOfMachines =
-    specsCommandsOverMachinesOrederedByBrowsers[config.browsers[0]].length;
+  const bashCommands = [];
+  const specsCommandsOverMachinesOrderedByBrowsers =
+    generateSpecsCommandsOverMachinesOrderedByBrowsers(config);
+  const _noOfMachines =
+    specsCommandsOverMachinesOrderedByBrowsers[config.browsers[0]].length;
 
   for (let i = 0; i < _noOfMachines; i++) {
     let bashCommand = "exit_code=0";
 
-    let _browsers = i % 2 ? config.browsers : config.browsers.reverse();
+    const _browsers = i % 2 ? config.browsers : config.browsers.reverse();
     _browsers.forEach((browser) => {
-      bashCommand = `${bashCommand}; npx cypress run -b ${browser} --headless --spec ${specsCommandsOverMachinesOrederedByBrowsers[browser][i]} || exit_code=$? ; pkill -9 cypress`;
+      bashCommand = `${bashCommand}; npx cypress run -b ${browser} --headless --spec ${specsCommandsOverMachinesOrderedByBrowsers[browser][i]} || exit_code=$? ; pkill -9 cypress`;
     });
 
     bashCommand = `${bashCommand} ; exit $exit_code`;
@@ -225,61 +237,60 @@ function _constructCypressCommands(config) {
   return bashCommands;
 }
 
-function upConrainters(config) {
+function upContainers(config) {
   lg.step("Start the cypress containers", true);
-  let promises = [];
-  let commands = [];
-  let [container_name, command] = ["", ""];
-  let bashCommands = _constructCypressCommands(config);
-  let dockerComposeOptions = extractDockerComposeOptions(config);
-
-  bashCommands.forEach((cmd) => {
-    container_name = `container_${Math.floor(
+  const promises = [];
+  const bashCommands = _constructCypressCommands(config);
+  const dockerComposeOptions = extractDockerComposeOptions(config);
+  const container_name = `${config.cypressContainerName}_${Math.floor(
       Math.random() * 100000
-    )}__${bashCommands.indexOf(cmd)}`;
+  )}`;
+  const commands = [
+    `docker-compose ${dockerComposeOptions} -f ${config.dockerComposePath} build ${config.cypressContainerName}`
+  ];
 
-    command = `timeout --preserve-status ${config.timeout} docker-compose ${dockerComposeOptions} -f ${config.dockerComposePath} run --name ${container_name} ${config.cypressContainerName} bash -c '${cmd}'`;
-    commands.push(command);
-    lg.subStep(`~$ ${command}`);
-    promises.push(execa(command));
+  bashCommands.forEach((cmd, index) => {
+    commands.push(`timeout --preserve-status ${config.timeout} docker-compose ${dockerComposeOptions} -f ${config.dockerComposePath} run --name ${container_name}__${index} ${config.cypressContainerName} bash -c '${cmd}'`);
   });
+
+  commands.forEach((cmd) => {
+    lg.subStep(`~$ ${cmd}`);
+    promises.push(execa(cmd));
+  })
 
   return promises;
 }
 
 function downContainers(config) {
-  let dockerComposeOptions = extractDockerComposeOptions(config);
+  const dockerComposeOptions = extractDockerComposeOptions(config);
   lg.step("Stop the cypress containers", true);
-  let dockerComposeDown = `docker-compose ${dockerComposeOptions} -f ${config.dockerComposePath} down`;
+  const dockerComposeDown = `docker-compose ${dockerComposeOptions} -f ${config.dockerComposePath} down`;
   sh.exec(dockerComposeDown);
 }
 
-function generateReport(config) {
+async function generateReport(config) {
   lg.step("Generate the reports", true);
-  return merge({ files: [config.mochawesomeJSONPath] })
-    .then((report) => {
-      lg.subStep(`HTML report: ${config.reportPath}/mochawesome.html`);
-      marge.create(report, {
-        reportDir: config.reportPath,
-        charts: true,
-        saveJson: true,
-      });
-    })
-    .then(() => {
-      if (config.analyseReport) {
-        if (!fs.existsSync(executionTimeReportDirPath)) {
-          sh.mkdir(executionTimeReportDirPath);
-        }
-        lg.subStep(
-          `Execution time report: ${executionTimeReportDir}/${executiontimeReportJson}`
-        );
-        _analyseReport(config);
-      }
-    });
+  const report = await merge({ files: [config.mochawesomeJSONPath] })
+  lg.subStep(`HTML report: ${config.reportPath}/mochawesome.html`);
+  await marge.create(report, {
+    reportDir: config.reportPath,
+    charts: true,
+    saveJson: true,
+  });
+  if (config.analyseReport) {
+    if (!fs.existsSync(executionTimeReportDirPath)) {
+      sh.mkdir(executionTimeReportDirPath);
+    }
+    lg.subStep(
+        `Execution time report: ${executionTimeReportDir}/${executionTimeReportJson}`
+    );
+    _analyseReport(config);
+  }
+  return true
 }
 
 function _analyseReport(config) {
-  let mergedMochawesomeJSONPath = "";
+  let mergedMochawesomeJSONPath;
   if (config.reportPath.includes(process.cwd())) {
     mergedMochawesomeJSONPath = path.resolve(
       process.cwd(),
@@ -293,29 +304,28 @@ function _analyseReport(config) {
     );
   }
 
-  analyseReport(mergedMochawesomeJSONPath, executiontimeReportJsonPath);
+  analyseReport(mergedMochawesomeJSONPath, executionTimeReportJsonPath);
 }
 
-function afterPromises(config, timer) {
+async function afterPromises(config, timer) {
   downContainers(config);
-  generateReport(config).then(() => {
-    console.timeEnd(timer);
-  });
+  await generateReport(config)
+  console.timeEnd(timer);
 }
 
 export async function orchestrator(rawArgs) {
   lg.banner();
   checkRequirements();
 
-  let orchestratorTime = "\n[*] Total execution time";
-  let config = overWriteConfig(parseArgumentsIntoConfig(rawArgs));
+  const orchestratorTime = "\n[*] Total execution time";
+  const config = overWriteConfig(parseArgumentsIntoConfig(rawArgs));
 
   console.time(orchestratorTime);
   setEnvVars(config);
   execPreCommands(config);
 
-  Promise.allSettled(upConrainters(config)).then((promises) => {
-    afterPromises(config, orchestratorTime);
+  Promise.allSettled(upContainers(config)).then(async (promises) => {
+    await afterPromises(config, orchestratorTime);
     const failedPromises = promises.filter(
       (promise) => promise.status === "rejected"
     );
