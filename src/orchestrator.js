@@ -112,7 +112,7 @@ function setEnvVars(config) {
       const cypressEnv = JSON.parse(fs.readFileSync('cypress.env.json', {encoding: 'utf8', flag: 'r'}));
       if (cypressEnv) {
         Object.keys(cypressEnv).forEach((key) => {
-          if (sh.env?.[`CYPRESS_${key}`]) {
+          if (`CYPRESS_${key}` in sh.env) {
             lg.subStep(`Skipping import of ${key} because already set to ${sh.env[`CYPRESS_${key}`]}`)
           } else {
             const value = cypressEnv[key];
