@@ -146,8 +146,9 @@ function getListOfSpecs(config, browser) {
       browser
     ).map((item) => item.specName);
 
-    const specs = [
-      ...browserSpecs.filter((spec) => existingSpecs.includes(spec)),
+    let specs = browserSpecs.filter((spec) => existingSpecs.includes(spec));
+    specs = [
+      ...specs,
       ...existingSpecs.filter((item) => !specs.includes(item)),
     ];
 
