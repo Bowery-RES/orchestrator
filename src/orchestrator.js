@@ -238,25 +238,31 @@ function _constructCypressCommands(config) {
 }
 
 function upContainers(config) {
-  lg.step("Start the cypress containers", true);
   const promises = [];
   const bashCommands = _constructCypressCommands(config);
   const dockerComposeOptions = extractDockerComposeOptions(config);
   const container_name = `${config.cypressContainerName}_${Math.floor(
       Math.random() * 100000
   )}`;
-  const commands = [
-    `docker-compose ${dockerComposeOptions} -f ${config.dockerComposePath} build ${config.cypressContainerName}`
-  ];
+
+  lg.step("Build the cypress containers", true);
+  const buildCmd = `docker-compose ${dockerComposeOptions} -f ${config.dockerComposePath} build ${config.cypressContainerName}`;
+  lg.subStep(`~$ ${buildCmd}`);
+  const {code, stdout, stderr} = sh.exec(buildCmd, { silent:true });
+  lg.subStep(stdout)
+  if (code !== 0) {
+    lg.subStep(`Error building docker container with docker-compose.\n${stderr}`);
+    sh.exit(code);
+    return promises
+  }
+
+  lg.step("Start the cypress containers", true);
 
   bashCommands.forEach((cmd, index) => {
-    commands.push(`timeout --preserve-status ${config.timeout} docker-compose ${dockerComposeOptions} -f ${config.dockerComposePath} run --name ${container_name}__${index} ${config.cypressContainerName} bash -c '${cmd}'`);
+    const command = `timeout --preserve-status ${config.timeout} docker-compose ${dockerComposeOptions} -f ${config.dockerComposePath} run --name ${container_name}__${index} ${config.cypressContainerName} bash -c '${cmd}'`;
+    lg.subStep(`~$ ${command}`);
+    promises.push(execa(command));
   });
-
-  commands.forEach((cmd) => {
-    lg.subStep(`~$ ${cmd}`);
-    promises.push(execa(cmd));
-  })
 
   return promises;
 }
