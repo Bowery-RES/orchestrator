@@ -97,6 +97,7 @@ function overWriteConfig(args) {
     "reportPath": "",
     "specs": [],
     "analyseReport": false,
+    "useCypressEnvJson": false,
     "specsExecutionTimePath": "",
     ...defaultConfig,
     ...args
@@ -105,11 +106,34 @@ function overWriteConfig(args) {
 
 function setEnvVars(config) {
   lg.step("Export the environment variables");
+  if (config.useCypressEnvJson && fs.existsSync('cypress.env.json')) {
+    lg.subStep('Importing cypress.env.json');
+    try {
+      const cypressEnv = JSON.parse(fs.readFileSync('cypress.env.json', {encoding: 'utf8', flag: 'r'}));
+      if (cypressEnv) {
+        Object.keys(cypressEnv).forEach((key) => {
+          const value = cypressEnv[key];
+          sh.env[`CYPRESS_${key}`] = value;
+          lg.subStep(`CYPRESS_${key}=${value}`);
+        });
+      }
+    } catch (err) {
+      lg.subStep(err);
+    }
+  }
   Object.keys(config.environment).forEach((key) => {
     const value = config.environment[key];
     sh.env[key] = value;
     lg.subStep(`${key}=${value}`);
   });
+  if (config.useCypressEnvJson) {
+    lg.step("Save CYPRESS_ env variables to cypress.env.json");
+    const variables = {};
+    Object.keys(sh.env).filter((key) => key.startsWith('CYPRESS_')).forEach((key) => {
+      variables[key.substring(8)] = sh.env[key];
+    });
+    fs.writeFileSync('cypress.env.json', JSON.stringify(variables, null, 2));
+  }
 }
 
 function execPreCommands(config) {
@@ -123,7 +147,7 @@ function execPreCommands(config) {
 function extractDockerComposeOptions(config) {
   let dockerComposeOptions = "";
   Object.keys(config.dockerComposeOptions).forEach((option) => {
-   dockerComposeOptions = `${dockerComposeOptions} ${option} ${config.dockerComposeOptions[option]}`;
+    dockerComposeOptions = `${dockerComposeOptions} ${option} ${config.dockerComposeOptions[option]}`;
   });
   return dockerComposeOptions;
 }

@@ -148,6 +148,12 @@ services:
     type: boolen
     example: true
 
+- useCypressEnvJson:
+    description: boolen value to pass CYPRESS_ env variables via cypress.env.json.
+    Requires adding a volume mapping in docker-compose file for ./cypress.env.json:/cypress_testing/cypress.env.json  
+    type: boolen
+    example: true
+
 ```
 
 ## 🎮 Usage:
