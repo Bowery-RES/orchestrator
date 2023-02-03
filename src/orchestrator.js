@@ -112,9 +112,13 @@ function setEnvVars(config) {
       const cypressEnv = JSON.parse(fs.readFileSync('cypress.env.json', {encoding: 'utf8', flag: 'r'}));
       if (cypressEnv) {
         Object.keys(cypressEnv).forEach((key) => {
-          const value = cypressEnv[key];
-          sh.env[`CYPRESS_${key}`] = value;
-          lg.subStep(`CYPRESS_${key}=${value}`);
+          if (sh.env?.[`CYPRESS_${key}`]) {
+            lg.subStep(`Skipping import of ${key} because already set to ${sh.env[`CYPRESS_${key}`]}`)
+          } else {
+            const value = cypressEnv[key];
+            sh.env[`CYPRESS_${key}`] = value;
+            lg.subStep(`CYPRESS_${key}=${value}`);
+          }
         });
       }
     } catch (err) {
@@ -350,6 +354,8 @@ export async function orchestrator(rawArgs) {
 
   const orchestratorTime = "\n[*] Total execution time";
   const config = overWriteConfig(parseArgumentsIntoConfig(rawArgs));
+
+  lg.step("Config: \n"+JSON.stringify(config, null, 2));
 
   console.time(orchestratorTime);
   setEnvVars(config);
