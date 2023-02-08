@@ -147,6 +147,16 @@ services:
     description: boolean value to generate an execution time report. 
     type: boolean
     example: true
+    
+- executionTimeReportDir:
+    description: path to save the generated execution time JSON to.
+    type: string
+    example: "executionTimeReport"
+    
+- executionTimeReportJson:
+    description: file name to use for the execution time report.
+    type: string
+    example: "specsExecutionTime.json"
 
 - useCypressEnvJson:
     description: boolean value to pass CYPRESS_ env variables via cypress.env.json.

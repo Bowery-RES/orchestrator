@@ -2,14 +2,13 @@
 
 import fs from "fs";
 import path from "path";
+import { warn } from './logger'
 
 export function checkFileIsExisting(filePath) {
   if (fs.existsSync(filePath)) {
     return true;
   } else {
-    console.log(
-      `report does not exist, are you sure there is a json report in ${filePath} path?`
-    );
+    warn(`File does not exist, are you sure there is a json report in ${filePath} path?`);
     return false;
   }
 }

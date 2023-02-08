@@ -10,17 +10,6 @@ import {checkFileIsExisting, orderBasedOnBrowserDuration, parseJsonFile,} from "
 import * as lg from "./logger";
 import {checkRequirements} from "./checker";
 
-const executionTimeReportDir = "executionTimeReport";
-const executionTimeReportDirPath = path.resolve(
-  process.cwd(),
-  executionTimeReportDir
-);
-const executionTimeReportJson = "specsExecutionTime.json";
-const executionTimeReportJsonPath = path.join(
-  executionTimeReportDirPath,
-  executionTimeReportJson
-);
-
 function execa(command, flag = true) {
   return new Promise((resolve, reject) =>
     sh.exec(command, function (code, stdout, stderr) {
@@ -97,6 +86,8 @@ function overWriteConfig(args) {
     "reportPath": "",
     "specs": [],
     "analyseReport": false,
+    "executionTimeReportDir": "executionTimeReport",
+    "executionTimeReportJson": "specsExecutionTime.json",
     "useCypressEnvJson": false,
     "specsExecutionTimePath": "",
     "gh": false,
@@ -168,8 +159,8 @@ function getListOfSpecs(config, browser) {
       .filter((val) => val.match(/.*ts|js/));
   }
 
-  if (checkFileIsExisting(executionTimeReportJsonPath)) {
-    const specsExecutionTime = parseJsonFile(executionTimeReportJsonPath);
+  if (config.analyseReport && checkFileIsExisting(config.executionTimeReportJsonPath)) {
+    const specsExecutionTime = parseJsonFile(config.executionTimeReportJsonPath);
     const browserSpecs = orderBasedOnBrowserDuration(
       specsExecutionTime,
       browser
@@ -325,11 +316,11 @@ async function generateReport(config) {
     saveJson: true,
   });
   if (config.analyseReport) {
-    if (!fs.existsSync(executionTimeReportDirPath)) {
-      sh.mkdir(executionTimeReportDirPath);
+    if (!fs.existsSync(config.executionTimeReportDirPath)) {
+      sh.mkdir(config.executionTimeReportDirPath);
     }
     lg.subStep(
-        `Execution time report: ${executionTimeReportDir}/${executionTimeReportJson}`
+        `Execution time report: ${config.executionTimeReportDir}/${config.executionTimeReportJson}`
     );
     _analyseReport(config);
   }
@@ -351,7 +342,7 @@ function _analyseReport(config) {
     );
   }
 
-  analyseReport(mergedMochawesomeJSONPath, executionTimeReportJsonPath);
+  analyseReport(mergedMochawesomeJSONPath, config.executionTimeReportJsonPath);
 }
 
 async function afterPromises(config, timer) {
@@ -366,6 +357,17 @@ export async function orchestrator(rawArgs) {
 
   const orchestratorTime = "\n[*] Total execution time";
   const config = overWriteConfig(parseArgumentsIntoConfig(rawArgs));
+
+  if (config.analyseReport) {
+    config.executionTimeReportDirPath = path.resolve(
+        process.cwd(),
+        config.executionTimeReportDir
+    );
+    config.executionTimeReportJsonPath = path.join(
+        config.executionTimeReportDirPath,
+        config.executionTimeReportJson
+    );
+  }
 
   lg.step("Config: \n"+JSON.stringify(config, null, 2));
 

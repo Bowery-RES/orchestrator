@@ -45,4 +45,10 @@ function timeEnd(message) {
   console.timeEnd(message);
 }
 
-export { banner, step, subStep, time, timeEnd };
+function warn(message) {
+  if (process.env.SILENT) return;
+
+  console.warn(message);
+}
+
+export { banner, step, subStep, time, timeEnd, warn };

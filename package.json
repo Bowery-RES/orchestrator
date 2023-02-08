@@ -1,6 +1,6 @@
 {
   "name": "@bowery-valuation/orchestrator",
-  "version": "2.4.1",
+  "version": "2.5.0",
   "description": "Execute cypress specs in parallel across multiple docker containers. Forked from https://github.com/0xIslamTaha/orchestrator",
   "main": "src/orchestrator.js",
   "scripts": {
