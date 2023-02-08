@@ -358,7 +358,7 @@ export async function orchestrator(rawArgs) {
   lg.step("Config: \n"+JSON.stringify(config, null, 2));
 
   console.time(orchestratorTime);
-  execa(`date +%s > ${config.reportPath}/time.start`);
+  execa(`mkdir -p ${config.reportPath} && date +%s > ${config.reportPath}/time.start`);
   setEnvVars(config);
   execPreCommands(config);
 
