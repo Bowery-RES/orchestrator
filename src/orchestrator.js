@@ -284,7 +284,7 @@ function upContainers(config) {
   let matrix = [];
   bashCommands.forEach((cmd, index) => {
     if (config.gh) {
-      matrix.push(`timeout --preserve-status ${config.timeout} ${cmd}`);
+      matrix.push(`timeout --preserve-status ${config.timeout} bash -c '${cmd}'`);
     } else {
       const command = `timeout --preserve-status ${config.timeout} docker-compose ${dockerComposeOptions} -f ${config.dockerComposePath} run --name ${container_name}__${index} ${config.cypressContainerName} bash -c '${cmd}'`;
       lg.subStep(`~$ ${command}`);
@@ -293,7 +293,6 @@ function upContainers(config) {
   });
 
   if (config.gh) {
-    console.info(`matrix=${JSON.stringify(Object.keys(matrix))}`);
     console.info(`commands=${JSON.stringify(matrix)}`);
   }
 
