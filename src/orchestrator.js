@@ -99,6 +99,7 @@ function overWriteConfig(args) {
     "analyseReport": false,
     "useCypressEnvJson": false,
     "specsExecutionTimePath": "",
+    "gh": false,
     ...defaultConfig,
     ...args
   };
@@ -274,24 +275,35 @@ function upContainers(config) {
       Math.random() * 100000
   )}`;
 
-  lg.step("Build the cypress containers", true);
-  const buildCmd = `docker-compose ${dockerComposeOptions} -f ${config.dockerComposePath} build ${config.cypressContainerName}`;
-  lg.subStep(`~$ ${buildCmd}`);
-  const {code, stdout, stderr} = sh.exec(buildCmd, { silent:true });
-  lg.subStep(stdout)
-  if (code !== 0) {
-    lg.subStep(`Error building docker container with docker-compose.\n${stderr}`);
-    sh.exit(code);
-    return promises
+  if (!config.gh) {
+    lg.step("Build the cypress containers", true);
+    const buildCmd = `docker-compose ${dockerComposeOptions} -f ${config.dockerComposePath} build ${config.cypressContainerName}`;
+    lg.subStep(`~$ ${buildCmd}`);
+    const {code, stdout, stderr} = sh.exec(buildCmd, {silent: true});
+    lg.subStep(stdout)
+    if (code !== 0) {
+      lg.subStep(`Error building docker container with docker-compose.\n${stderr}`);
+      sh.exit(code);
+      return promises
+    }
   }
 
   lg.step("Start the cypress containers", true);
 
+  let matrix = [];
   bashCommands.forEach((cmd, index) => {
-    const command = `timeout --preserve-status ${config.timeout} docker-compose ${dockerComposeOptions} -f ${config.dockerComposePath} run --name ${container_name}__${index} ${config.cypressContainerName} bash -c '${cmd}'`;
-    lg.subStep(`~$ ${command}`);
-    promises.push(execa(command));
+    if (config.gh) {
+      matrix.push(`timeout --preserve-status ${config.timeout} ${cmd}`);
+    } else {
+      const command = `timeout --preserve-status ${config.timeout} docker-compose ${dockerComposeOptions} -f ${config.dockerComposePath} run --name ${container_name}__${index} ${config.cypressContainerName} bash -c '${cmd}'`;
+      lg.subStep(`~$ ${command}`);
+      promises.push(execa(command));
+    }
   });
+
+  if (config.gh) {
+    console.info(`matrix=${JSON.stringify(matrix)}`);
+  }
 
   return promises;
 }
@@ -345,7 +357,7 @@ function _analyseReport(config) {
 async function afterPromises(config, timer) {
   downContainers(config);
   await generateReport(config)
-  console.timeEnd(timer);
+  lg.timeEnd(timer);
 }
 
 export async function orchestrator(rawArgs) {
@@ -357,14 +369,20 @@ export async function orchestrator(rawArgs) {
 
   lg.step("Config: \n"+JSON.stringify(config, null, 2));
 
-  console.time(orchestratorTime);
-  execa(`mkdir -p ${config.reportPath} && date +%s > ${config.reportPath}/time.start`);
+  lg.time(orchestratorTime);
+  if (!config.gh) {
+    execa(`mkdir -p ${config.reportPath} && date +%s > ${config.reportPath}/time.start`);
+  }
   setEnvVars(config);
-  execPreCommands(config);
+  if (!config.gh) {
+    execPreCommands(config);
+  }
 
   Promise.allSettled(upContainers(config)).then(async (promises) => {
     await afterPromises(config, orchestratorTime);
-    await execa(`date +%s > ${config.reportPath}/time.finish`);
+    if (!config.gh) {
+      await execa(`date +%s > ${config.reportPath}/time.finish`);
+    }
     const failedPromises = promises.filter(
       (promise) => promise.status === "rejected"
     );

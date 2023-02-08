@@ -1,4 +1,6 @@
 function banner() {
+  if (process.env.SILENT) return;
+
   let banner = `
    ██████      ██████       ██████     ██   ██     ███████     ███████     ████████     ██████       █████      ████████      ██████      ██████  
   ██    ██     ██   ██     ██          ██   ██     ██          ██             ██        ██   ██     ██   ██        ██        ██    ██     ██   ██ 
@@ -13,6 +15,8 @@ function banner() {
 
 
 function step(msg, newLine=false) {
+  if (process.env.SILENT) return;
+
   let message;
   if (newLine) {
     message = `\n[*] ${msg}`; 
@@ -23,8 +27,22 @@ function step(msg, newLine=false) {
 }
 
 function subStep(subStep){
-    let message = `[-] ${subStep}`;
+  if (process.env.SILENT) return;
+
+  let message = `[-] ${subStep}`;
     console.log(message);
 }
 
-export { banner, step, subStep };
+function time(message) {
+  if (process.env.SILENT) return;
+
+  console.time(message);
+}
+
+function timeEnd(message) {
+  if (process.env.SILENT) return;
+
+  console.timeEnd(message);
+}
+
+export { banner, step, subStep, time, timeEnd };

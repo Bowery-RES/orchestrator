@@ -144,14 +144,20 @@ services:
     example: ["test.js", "test2.js"]
 
 - analyseReport:
-    description: boolen value to generate an execution time report. 
-    type: boolen
+    description: boolean value to generate an execution time report. 
+    type: boolean
     example: true
 
 - useCypressEnvJson:
-    description: boolen value to pass CYPRESS_ env variables via cypress.env.json.
+    description: boolean value to pass CYPRESS_ env variables via cypress.env.json.
     Requires adding a volume mapping in docker-compose file for ./cypress.env.json:/cypress_testing/cypress.env.json  
-    type: boolen
+    type: boolean
+    example: true
+
+- gh:
+    description: Generate output only for spawning github job matrix. Does not execute commands or generate a report.  
+    type: boolean
+    default: false
     example: true
 
 ```
@@ -174,6 +180,8 @@ The orchestrator generates two reports by default:
 - The HTML report under the `mochawesome-report` dir.
 - The execution time reports per browser und `ExecutionTimeReport` dir.
 
+## Silent Mode:
+To suppress all log statements set the ENV variable `SILENT=true`.
 
 ## 🎬 To-Do:
 * list configuration rather than multiple files for multiple test suites.
