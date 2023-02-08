@@ -293,7 +293,8 @@ function upContainers(config) {
   });
 
   if (config.gh) {
-    console.info(`matrix=${JSON.stringify(matrix)}`);
+    console.info(`matrix=${JSON.stringify(Object.keys(matrix))}`);
+    console.info(`commands=${JSON.stringify(matrix)}`);
   }
 
   return promises;
