@@ -358,11 +358,13 @@ export async function orchestrator(rawArgs) {
   lg.step("Config: \n"+JSON.stringify(config, null, 2));
 
   console.time(orchestratorTime);
+  execa(`date +%s > ${config.reportPath}/time.start`);
   setEnvVars(config);
   execPreCommands(config);
 
   Promise.allSettled(upContainers(config)).then(async (promises) => {
     await afterPromises(config, orchestratorTime);
+    await execa(`date +%s > ${config.reportPath}/time.finish`);
     const failedPromises = promises.filter(
       (promise) => promise.status === "rejected"
     );
