@@ -374,23 +374,24 @@ export async function orchestrator(rawArgs) {
     execa(`mkdir -p ${config.reportPath} && date +%s > ${config.reportPath}/time.start`);
   }
   setEnvVars(config);
-  if (!config.gh) {
-    execPreCommands(config);
-  }
 
-  Promise.allSettled(upContainers(config)).then(async (promises) => {
-    await afterPromises(config, orchestratorTime);
-    if (!config.gh) {
+  if (config.gh) {
+    upContainers(config);
+  } else {
+    execPreCommands(config);
+
+    Promise.allSettled(upContainers(config)).then(async (promises) => {
+      await afterPromises(config, orchestratorTime);
       await execa(`date +%s > ${config.reportPath}/time.finish`);
-    }
-    const failedPromises = promises.filter(
-      (promise) => promise.status === "rejected"
-    );
-    if (failedPromises.length) {
-      setTimeout(() => {
-        lg.step("Exit code: 1");
-        sh.exit(1);
-      }, 5000);
-    }
-  });
+      const failedPromises = promises.filter(
+          (promise) => promise.status === "rejected"
+      );
+      if (failedPromises.length) {
+        setTimeout(() => {
+          lg.step("Exit code: 1");
+          sh.exit(1);
+        }, 5000);
+      }
+    });
+  }
 }
