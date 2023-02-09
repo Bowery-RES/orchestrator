@@ -90,7 +90,7 @@ function overWriteConfig(args) {
     "executionTimeReportJson": "specsExecutionTime.json",
     "useCypressEnvJson": false,
     "specsExecutionTimePath": "",
-    "gh": false,
+    "gh": '',
     ...defaultConfig,
     ...args
   };
@@ -377,8 +377,11 @@ export async function orchestrator(rawArgs) {
   }
   setEnvVars(config);
 
-  if (config.gh) {
+  if (config.gh === 'divide') {
     upContainers(config);
+  } else if (config.gh === 'merge') {
+    await execa(`mkdir -p ${config.reportPath}`);
+    await generateReport(config);
   } else {
     execPreCommands(config);
 

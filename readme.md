@@ -165,10 +165,12 @@ services:
     example: true
 
 - gh:
-    description: Generate output only for spawning github job matrix. Does not execute commands or generate a report.  
-    type: boolean
-    default: false
-    example: true
+    description: Used to generate parallel github action runners. 
+    If set to "divide": Generate output only for spawning github job matrix. Does not execute tests.
+    If set to "merge": Merge the json report files and generate a mochawesome report. Does not execute tests.
+    type: string
+    default: ""
+    example: "divide" or "merge"
 
 ```
 
