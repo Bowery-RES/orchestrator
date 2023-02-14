@@ -151,13 +151,18 @@ function extractDockerComposeOptions(config) {
 function getListOfSpecs(config, browser) {
   let existingSpecs = [];
 
+  lg.step('Get list of specs.');
+  lg.subStep('config.specs input: '+config.specs.join(', '));
+  lg.subStep('config.specsHomePath input: '+JSON.stringify(config.specsHomePath));
   if (config.specs.length > 0) {
     existingSpecs = [...config.specs];
   } else {
     existingSpecs = sh
       .ls("-R", config.specsHomePath)
-      .filter((val) => val.match(/.*ts|js/));
+      .filter((val) => val.match(/^.*?\.ts|js$/));
   }
+  lg.subStep('Specs: '+existingSpecs.join(', '));
+  lg.subStep(`Found ${existingSpecs.length} specs.`)
 
   if (config.analyseReport && checkFileIsExisting(config.executionTimeReportJsonPath)) {
     const specsExecutionTime = parseJsonFile(config.executionTimeReportJsonPath);
