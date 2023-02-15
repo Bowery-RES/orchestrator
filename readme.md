@@ -145,7 +145,8 @@ services:
 
 - grepTags:
     description: Grep Tags to pass to cypress for filtering tests to run.
-    If using - to exclude a tag on the command line use -- before this argument eg. --grepTags -- '-@smoke' 
+    If using - to exclude a tag on the command line use -- before this argument eg. --grepTags -- '-@smoke'
+    This value will also be read from the ENV variable CYPRESS_grepTags 
     type: string
     example: "@smoke"
 

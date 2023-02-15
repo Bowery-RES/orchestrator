@@ -126,6 +126,9 @@ function setEnvVars(config) {
   if (config.grepTags) {
     lg.subStep(`Overriding CYPRESS_grepTags with value from config: "${config.grepTags}"`);
     sh.env['CYPRESS_grepTags'] = config.grepTags;
+  } else if (sh.env['CYPRESS_grepTags']) {
+    lg.subStep(`Overriding config.grepTags (unset) with value from ENV CYPRESS_grepTags: "${sh.env['CYPRESS_grepTags']}"`);
+    config.grepTags = sh.env['CYPRESS_grepTags'];
   }
   if (config.useCypressEnvJson) {
     lg.step("Save CYPRESS_ env variables to cypress.env.json");
