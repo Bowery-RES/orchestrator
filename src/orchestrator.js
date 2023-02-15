@@ -85,6 +85,7 @@ function overWriteConfig(args) {
     "mochawesomeJSONPath": "",
     "reportPath": "",
     "specs": [],
+    "grepTags": "",
     "analyseReport": false,
     "executionTimeReportDir": "executionTimeReport",
     "executionTimeReportJson": "specsExecutionTime.json",
@@ -122,6 +123,10 @@ function setEnvVars(config) {
     sh.env[key] = value;
     lg.subStep(`${key}=${value}`);
   });
+  if (config.grepTags) {
+    lg.subStep(`Overriding CYPRESS_grepTags with value from config: "${config.grepTags}"`);
+    sh.env['CYPRESS_grepTags'] = config.grepTags;
+  }
   if (config.useCypressEnvJson) {
     lg.step("Save CYPRESS_ env variables to cypress.env.json");
     const variables = {};
@@ -161,7 +166,38 @@ function getListOfSpecs(config, browser) {
       .ls("-R", config.specsHomePath)
       .filter((val) => val.match(/^.*?\.ts|js$/));
   }
-  lg.subStep('Specs: '+existingSpecs.join(', '));
+
+  if (config.grepTags) {
+    lg.subStep('Filtering on config.grepTags input: '+config.grepTags);
+    const includeTags = [];
+    const excludeTags = [];
+    config.grepTags.split(',').forEach(tag => {
+      if (tag.startsWith('-')) {
+        excludeTags.push(tag.substring(1));
+      } else {
+        includeTags.push(tag);
+      }
+    })
+    if (includeTags.length > 0) {
+      lg.subStep(`Requiring Tags: ${includeTags.join(', ')}`);
+      const regex = new RegExp(`"(${includeTags.join('|')})"`);
+      existingSpecs = sh.grep('-l', regex, existingSpecs.map(path => config.specsHomePath + path)).stdout.split('\n')
+          .map(path => path.substring(config.specsHomePath.length))
+          .filter(file => file.length > 0);
+      lg.subStep(`Include Specs: ${existingSpecs.join(', ')}`);
+    }
+    if (excludeTags.length > 0) {
+      lg.subStep(`Excluding Tags: ${excludeTags.join(', ')}`);
+      const regex = new RegExp(`"(${excludeTags.join('|')})"`);
+      const excludeSpecs = sh.grep('-l', regex, existingSpecs.map(path => config.specsHomePath + path)).stdout.split('\n')
+          .map(path => path.substring(config.specsHomePath.length))
+          .filter(file => file.length > 0);
+      lg.subStep(`Exclude Specs: ${excludeSpecs.join(', ')}`);
+      existingSpecs = existingSpecs.filter(path => !excludeSpecs.includes(path));
+    }
+  }
+
+  lg.subStep('Specs to Run: '+existingSpecs.join(', '));
   lg.subStep(`Found ${existingSpecs.length} specs.`)
 
   if (config.analyseReport && checkFileIsExisting(config.executionTimeReportJsonPath)) {

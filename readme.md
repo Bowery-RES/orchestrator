@@ -143,6 +143,12 @@ services:
     type: array
     example: ["test.js", "test2.js"]
 
+- grepTags:
+    description: Grep Tags to pass to cypress for filtering tests to run.
+    If using - to exclude a tag on the command line use -- before this argument eg. --grepTags -- '-@smoke' 
+    type: string
+    example: "@smoke"
+
 - analyseReport:
     description: boolean value to generate an execution time report. 
     type: boolean
